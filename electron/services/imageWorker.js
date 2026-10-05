@@ -130,6 +130,7 @@ const friendly = (e, args) => {
   const name = path.basename(
     (args && (args.input || (args.inputs && args.inputs[0]))) || "image",
   );
+  if (e.code === "ENOENT") return `${name}: the file was not found.`;
   if (/^(That image|Could not shrink|Unsupported or damaged)/.test(e.message))
     return e.message;
   if (/heif|heic|libheif|decoding plugin|bad seek/i.test(e.message))
