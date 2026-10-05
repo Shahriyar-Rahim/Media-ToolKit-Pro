@@ -1,13 +1,16 @@
 const fs = require('fs');
 const { execFile } = require('child_process');
-const sharp = require('sharp');
+const { callWorker } = require("./imageHost");
 
 // Vault gallery thumbnails: images via Sharp, videos via one FFmpeg frame. Anything else (audio, PDF) gets an icon in the UI.
 function createThumbs({ ffmpegPath, limit = 300 }) {
   const cache = new Map();
   const remember = (k, v) => { cache.set(k, v); if (cache.size > limit) cache.delete(cache.keys().next().value); return v; };
   async function make(file, mediaType) {
-    if (mediaType === 'image') return sharp(file, { failOn: 'none' }).rotate().resize(200, 200, { fit: 'cover' }).jpeg({ quality: 62 }).toBuffer();
+    if (mediaType === "image") {
+      const b64 = await callWorker("thumbnail", { input: file });
+      return b64 ? Buffer.from(b64, "base64") : null;
+    }
     if (mediaType === 'video') return new Promise((resolve, reject) => execFile(ffmpegPath, ['-v', 'error', '-ss', '1', '-i', file, '-frames:v', '1', '-vf', 'scale=200:-2', '-f', 'image2pipe', '-vcodec', 'mjpeg', 'pipe:1'], { encoding: 'buffer', maxBuffer: 4 * 1048576, timeout: 20000 }, (e, out) => (e || !out.length ? reject(e || new Error('no frame')) : resolve(out))));
     return null;
   }

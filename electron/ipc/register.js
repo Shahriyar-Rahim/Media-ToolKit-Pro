@@ -18,6 +18,7 @@ const { createLogger } = require("../services/logger");
 const { createThumbs } = require("../services/thumbs");
 const { createUpdater } = require("../services/updater");
 const { prepareScreenshot } = require("../services/media-prep");
+const imageHost = require("../services/imageHost");
 
 const DEFAULTS = {
   outputMode: "source",
@@ -64,6 +65,7 @@ function registerIpc({ db, getWindow, userData }) {
   const log = createLogger({
     dir: path.join(userData || app.getPath("userData"), "logs"),
   });
+  imageHost.setLogger(log);
   const thumbOf = createThumbs({ ffmpegPath: ff.ffmpegPath });
   const updater = createUpdater({ app, log });
   process.on("uncaughtException", (e) =>

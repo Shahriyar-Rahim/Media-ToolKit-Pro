@@ -52,7 +52,15 @@ const remaining = (ent) => { const l = ent.limits, u = ent.usage, r = {}; if (l.
 function signSnapshot(userId, ent, hours = 72) {
   if (!env.entitlementPrivateKey) return null;
   const { usage, ...rest } = ent;
-  return jwt.sign({ sub: String(userId), ent: rest, remaining: remaining(ent) }, env.entitlementPrivateKey, { algorithm: 'ES256', expiresIn: `${hours}h` });
+  try {
+    return jwt.sign(
+      { sub: String(userId), ent: rest, remaining: remaining(ent) },
+      env.entitlementPrivateKey,
+      { algorithm: "ES256", expiresIn: `${hours}h` },
+    );
+  } catch (e) {
+    return null;
+  }
 }
 const verifySnapshot = (token, pub = env.entitlementPublicKey) => jwt.verify(token, pub, { algorithms: ['ES256'] });
 
