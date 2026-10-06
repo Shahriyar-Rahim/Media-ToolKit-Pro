@@ -11,6 +11,7 @@ export default function Auth({ start = "login", goto, onAuthed }) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const a = useAction();
+
   const titles = {
     login: "Log in",
     register: "Create your account",
@@ -22,6 +23,8 @@ export default function Auth({ start = "login", goto, onAuthed }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (a.busy) return; // Prevent extra requests while busy
+
     if (mode === "register") {
       if (
         await a.run(() =>
@@ -47,30 +50,37 @@ export default function Auth({ start = "login", goto, onAuthed }) {
         a.setOk("Email verified. You can log in now.");
       }
     } else if (mode === "login") {
-      try {
-        a.setErr("");
-        const r = await call("POST", "/api/auth/login", { email, password });
+      const r = await a.run(
+        () => call("POST", "/api/auth/login", { email, password }),
+        null, // No default success message; handled below
+      );
+
+      if (r) {
         if (r.otpRequired) {
           setMode("loginOtp");
           a.setOk("We emailed you a sign-in code.");
-        } else await onAuthed();
-      } catch (er) {
-        if (er.code === "EMAIL_NOT_VERIFIED") {
+        } else {
+          await onAuthed();
+        }
+      } else if (a.err) {
+        // Handle specific error codes returned from the backend/useAction
+        if (a.errCode === "EMAIL_NOT_VERIFIED") {
           setMode("verify");
           a.setOk("Please verify your email. We sent a new code.");
-        } else if (er.code === "PASSWORD_RESET_REQUIRED") {
+        } else if (a.errCode === "PASSWORD_RESET_REQUIRED") {
           setMode("reset");
           setPassword("");
           a.setOk(
             "For your security you need a new password. We emailed you a code.",
           );
-        } else a.setErr(er.message);
+        }
       }
     } else if (mode === "loginOtp") {
       if (
         await a.run(() => call("POST", "/api/auth/login/otp", { email, code }))
-      )
+      ) {
         await onAuthed();
+      }
     } else if (mode === "forgot") {
       if (
         await a.run(() => call("POST", "/api/auth/forgot-password", { email }))
@@ -91,11 +101,17 @@ export default function Auth({ start = "login", goto, onAuthed }) {
       }
     }
   };
-  const needsCode = ["verify", "loginOtp", "reset"].includes(mode),
-    needsPw = ["login", "register", "reset"].includes(mode);
+
+  const needsCode = ["verify", "loginOtp", "reset"].includes(mode);
+  const needsPw = ["login", "register", "reset"].includes(mode);
+
   return (
     <div className="max-w-md mx-auto py-12 px-6">
-      <button className="btn mb-4" onClick={() => goto("landing")}>
+      <button
+        className="btn mb-4"
+        onClick={() => goto("landing")}
+        disabled={a.busy}
+      >
         ← Back
       </button>
       <Card title={titles[mode]}>
@@ -107,7 +123,7 @@ export default function Auth({ start = "login", goto, onAuthed }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={mode === "loginOtp"}
+              disabled={mode === "loginOtp" || a.busy}
             />
           </Field>
           {mode === "register" && (
@@ -116,6 +132,7 @@ export default function Auth({ start = "login", goto, onAuthed }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
+                disabled={a.busy}
               />
             </Field>
           )}
@@ -136,6 +153,7 @@ export default function Auth({ start = "login", goto, onAuthed }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={a.busy}
               />
             </Field>
           )}
@@ -147,6 +165,7 @@ export default function Auth({ start = "login", goto, onAuthed }) {
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
+                disabled={a.busy}
               />
             </Field>
           )}
@@ -159,6 +178,7 @@ export default function Auth({ start = "login", goto, onAuthed }) {
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 required
+                disabled={a.busy}
               />
             </Field>
           )}
@@ -171,23 +191,35 @@ export default function Auth({ start = "login", goto, onAuthed }) {
         <div className="flex flex-wrap gap-3 mt-4 text-sm">
           {mode === "login" && (
             <>
-              <button className="btn" onClick={() => setMode("register")}>
+              <button
+                className="btn"
+                onClick={() => setMode("register")}
+                disabled={a.busy}
+              >
                 Create account
               </button>
-              <button className="btn" onClick={() => setMode("forgot")}>
+              <button
+                className="btn"
+                onClick={() => setMode("forgot")}
+                disabled={a.busy}
+              >
                 Forgot password
               </button>
             </>
           )}
           {mode === "register" && (
-            <button className="btn" onClick={() => setMode("login")}>
+            <button
+              className="btn"
+              onClick={() => setMode("login")}
+              disabled={a.busy}
+            >
               I already have an account
             </button>
           )}
           {mode === "verify" && (
             <button
               className="btn"
-              disabled={!email}
+              disabled={!email || a.busy}
               onClick={() =>
                 a.run(
                   () =>
@@ -200,7 +232,11 @@ export default function Auth({ start = "login", goto, onAuthed }) {
             </button>
           )}
           {(mode === "forgot" || mode === "reset" || mode === "loginOtp") && (
-            <button className="btn" onClick={() => setMode("login")}>
+            <button
+              className="btn"
+              onClick={() => setMode("login")}
+              disabled={a.busy}
+            >
               Back to log in
             </button>
           )}
