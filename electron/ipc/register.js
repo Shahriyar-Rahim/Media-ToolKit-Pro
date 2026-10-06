@@ -90,7 +90,7 @@ function registerIpc({ db, getWindow, userData }) {
   //   "",
   // );
 
-  const LIVE_SERVER_URL = "https://media-tool-kit-pro.vercel.app"; 
+  const LIVE_SERVER_URL = "https://media-toolkit-pro.onrender.com"; 
   const API_URL = (
     process.env.MTP_API_URL ||
     (app.isPackaged ? LIVE_SERVER_URL : "http://localhost:4000")
