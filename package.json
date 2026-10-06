@@ -42,6 +42,7 @@
   },
   "build": {
     "appId": "com.mediatoolkit.pro",
+    "publish": "never",
     "asarUnpack": [
       "**/node_modules/ffmpeg-static/**",
       "**/node_modules/ffprobe-static/**",

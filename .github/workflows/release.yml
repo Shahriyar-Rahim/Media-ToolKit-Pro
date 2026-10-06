@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  # Job 1: Build .exe (Win), .dmg (macOS), .deb, .AppImage, and .snap (Linux)
+  # Job 1: Build .exe (Win), .dmg (macOS), .deb & .AppImage (Linux)
   build-multiplatform:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -27,19 +27,18 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Install System Dependencies & Snapcraft (Linux Only)
+      - name: Install System Dependencies (Linux Only)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libarchive-tools icnsutils graphicsmagick
-          sudo snap install snapcraft --classic
 
       - name: Install Dependencies
         run: npm ci
 
-      # Runs 'vite build && electron-builder' to build all OS targets and .snap
+      # Build installers without internal electron-builder auto-publishing
       - name: Build Web Renderer & App Installers
-        run: npm run dist
+        run: npm run dist -- --publish never
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -56,7 +55,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Job 2: Upload Snap Package to Canonical Snap Store
+  # Job 2: Dedicated Snap Store Publication
   publish-snap:
     needs: build-multiplatform
     runs-on: ubuntu-latest
@@ -72,13 +71,15 @@ jobs:
 
       - name: Install Dependencies & Snapcraft
         run: |
-          npm ci
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools icnsutils graphicsmagick
           sudo snap install snapcraft --classic
+          npm ci
 
-      - name: Build Snap Package Only
+      - name: Build Snap Package
         id: build_snap
         run: |
-          npx electron-builder --linux snap
+          npx electron-builder --linux snap --publish never
           SNAP_FILE=$(ls release/*.snap | head -n 1)
           echo "snap_file=$SNAP_FILE" >> $GITHUB_OUTPUT
         env:
