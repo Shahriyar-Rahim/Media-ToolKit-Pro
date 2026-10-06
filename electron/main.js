@@ -6,6 +6,13 @@ const { openDb } = require("./services/db");
 const isDev = !app.isPackaged;
 const DEV_URL = "http://localhost:5173";
 
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
+app.commandLine.appendSwitch("disable-gpu-process-crash-limit");
+
+if (process.platform === "linux") {
+  app.disableHardwareAcceleration();
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,

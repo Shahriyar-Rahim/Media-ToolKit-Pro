@@ -64,6 +64,18 @@
       "icon": "build/icon.png",
       "maintainer": "Media Toolkit Pro <support@example.com>"
     },
+    "snap": {
+      "confinement": "strict",
+      "plugs": [
+        "desktop",
+        "desktop-legacy",
+        "home",
+        "network",
+        "opengl",
+        "wayland",
+        "x11"
+      ]
+    },
     "win": {
       "target": [
         {
