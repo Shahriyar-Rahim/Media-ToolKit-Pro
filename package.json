@@ -58,7 +58,8 @@
     "linux": {
       "target": [
         "AppImage",
-        "deb"
+        "deb",
+        "snap"
       ],
       "category": "AudioVideo",
       "icon": "build/icon.png",

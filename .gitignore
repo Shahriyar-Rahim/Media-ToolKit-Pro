@@ -4,3 +4,4 @@ release
 .env
 *.db
 tests/.build
+test-media/

@@ -1,0 +1,271 @@
+{
+  "when": "2026-10-06T13:35:50.653Z",
+  "platform": "linux x64",
+  "node": "v24.18.0",
+  "summary": {
+    "pass": 27,
+    "fail": 6,
+    "skip": 4
+  },
+  "results": [
+    {
+      "section": "Environment",
+      "name": "Node.js 18 or newer",
+      "status": "PASS",
+      "detail": "v24.18.0",
+      "ms": 1
+    },
+    {
+      "section": "Environment",
+      "name": "desktop dependencies are installed",
+      "status": "PASS",
+      "detail": "",
+      "ms": 7
+    },
+    {
+      "section": "Environment",
+      "name": "FFmpeg binary runs",
+      "status": "PASS",
+      "detail": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+      "ms": 43
+    },
+    {
+      "section": "Environment",
+      "name": "sharp (image library) loads",
+      "status": "PASS",
+      "detail": "libvips 8.15.3",
+      "ms": 108
+    },
+    {
+      "section": "Environment",
+      "name": "hardware video encoder detection",
+      "status": "PASS",
+      "detail": "no GPU encoder - CPU fallback will be used (FFmpeg build lacks h264_vaapi.)",
+      "ms": 19
+    },
+    {
+      "section": "Environment",
+      "name": "SQLite module build",
+      "status": "PASS",
+      "detail": "built for Electron (normal after \"npm install\"): SQLite unit tests will be skipped",
+      "ms": 25
+    },
+    {
+      "section": "Environment",
+      "name": "free disk space",
+      "status": "PASS",
+      "detail": "3 GB free",
+      "ms": 0
+    },
+    {
+      "section": "Desktop unit + UI tests",
+      "name": "queue, IPC validation, FFmpeg, PDF, HEIC worker, entitlement, logger, updater, React UI flows",
+      "status": "FAIL",
+      "detail": "the test runner produced no results",
+      "ms": 5553
+    },
+    {
+      "section": "Backend tests",
+      "name": "backend dependencies are installed",
+      "status": "PASS",
+      "detail": "",
+      "ms": 1
+    },
+    {
+      "section": "Backend tests",
+      "name": "backend logic + HTTP tests",
+      "status": "FAIL",
+      "detail": "the test runner produced no results",
+      "ms": 11787
+    },
+    {
+      "section": "Backend tests",
+      "name": "database integration tests (payments, refunds, OTP, discounts)",
+      "status": "SKIP",
+      "detail": "not run: add --mongo mongodb://127.0.0.1:27017/mtp_test (the database is wiped)",
+      "ms": 0
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-08-16 22-03-41.mp4: remux (copy streams, no re-encode) keeps codec and length",
+      "status": "PASS",
+      "detail": "3.64 MB",
+      "ms": 125
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-08-16 22-03-41.mp4: CPU H.264 re-encode",
+      "status": "FAIL",
+      "detail": "FAILED: FFmpeg failed (code 187): [out#0/mp4 @ 0x3a3c3140] Nothing was written into output file, because at least one of its streams received no packets. frame=    0 fps=0.0 q=0.0 Lsize=       0KiB time=N/A bitrate=N/A dup=6 drop=0 speed=N/A     Conversion failed!",
+      "ms": 602
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-08-16 22-03-41.mp4: rotate 90 degrees swaps width and height",
+      "status": "FAIL",
+      "detail": "FAILED: FFmpeg failed (code 187): [out#0/mp4 @ 0x3be3a040] Nothing was written into output file, because at least one of its streams received no packets. frame=    0 fps=0.0 q=0.0 Lsize=       0KiB time=N/A bitrate=N/A dup=6 drop=0 speed=N/A     Conversion failed!",
+      "ms": 605
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-08-16 22-03-41.mp4: maximum compression (H.265 / HEVC, hvc1 tag)",
+      "status": "FAIL",
+      "detail": "FAILED: FFmpeg failed (code 183): [out#0/mp4 @ 0x33519000] Nothing was written into output file, because at least one of its streams received no packets. frame=    0 fps=0.0 q=0.0 Lsize=       0KiB time=N/A bitrate=N/A dup=6 drop=0 speed=N/A     Conversion failed!",
+      "ms": 605
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-08-16 22-03-41.mp4: hardware mode (GPU if available, otherwise automatic CPU fallback)",
+      "status": "FAIL",
+      "detail": "FAILED: FFmpeg failed (code 187): [out#0/mp4 @ 0x9d7d140] Nothing was written into output file, because at least one of its streams received no packets. frame=    0 fps=0.0 q=0.0 Lsize=       0KiB time=N/A bitrate=N/A dup=6 drop=0 speed=N/A     Conversion failed!",
+      "ms": 603
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-08-16 22-03-41.mp4: extracting audio from a video with no sound fails clearly",
+      "status": "PASS",
+      "detail": "This file has no audio stream.",
+      "ms": 102
+    },
+    {
+      "section": "Real files",
+      "name": "running the same job twice never overwrites the first result",
+      "status": "PASS",
+      "detail": "Screencast From 2026-08-16 22-03-41_clip_compressed (2).mp4",
+      "ms": 203
+    },
+    {
+      "section": "Real files",
+      "name": "cancelling a running H.265 encode stops it and leaves no partial file",
+      "status": "SKIP",
+      "detail": "the encode finished before it could be cancelled (clip too small/short for this test)",
+      "ms": 2027
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-09-24 02-44-40.mp4: remux (copy streams, no re-encode) keeps codec and length",
+      "status": "PASS",
+      "detail": "5.23 MB",
+      "ms": 264
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-09-24 02-44-40.mp4: CPU H.264 re-encode",
+      "status": "PASS",
+      "detail": "5.24 MB -> 0.90 MB",
+      "ms": 2648
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-09-24 02-44-40.mp4: rotate 90 degrees swaps width and height",
+      "status": "PASS",
+      "detail": "1920x1080 -> 1080x1920",
+      "ms": 2450
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-09-24 02-44-40.mp4: maximum compression (H.265 / HEVC, hvc1 tag)",
+      "status": "PASS",
+      "detail": "5.24 MB -> 1.31 MB",
+      "ms": 4527
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-09-24 02-44-40.mp4: hardware mode (GPU if available, otherwise automatic CPU fallback)",
+      "status": "PASS",
+      "detail": "no GPU here: fell back to CPU as designed",
+      "ms": 2347
+    },
+    {
+      "section": "Real files",
+      "name": "Screencast From 2026-09-24 02-44-40.mp4: extracting audio from a video with no sound fails clearly",
+      "status": "PASS",
+      "detail": "This file has no audio stream.",
+      "ms": 100
+    },
+    {
+      "section": "Real files",
+      "name": "audio tests",
+      "status": "SKIP",
+      "detail": "no audio file in the folder",
+      "ms": 0
+    },
+    {
+      "section": "Real files",
+      "name": "0fad41d3-1cac-4a16-999c-f39cbecd6d1e.jpeg: convert to JPG",
+      "status": "PASS",
+      "detail": "1254x1254, 0.10 MB",
+      "ms": 305
+    },
+    {
+      "section": "Real files",
+      "name": "IMG_5484.jpeg: convert to JPG",
+      "status": "PASS",
+      "detail": "2139x1200, 0.67 MB",
+      "ms": 607
+    },
+    {
+      "section": "Real files",
+      "name": "IMG_6154.HEIC: convert to JPG",
+      "status": "PASS",
+      "detail": "3024x4032, 3.22 MB",
+      "ms": 2112
+    },
+    {
+      "section": "Real files",
+      "name": "3 image(s) -> one PDF, in order, HEIC included",
+      "status": "PASS",
+      "detail": "3 pages, 4.22 MB",
+      "ms": 2418
+    },
+    {
+      "section": "Real files",
+      "name": "a damaged image fails with a short, friendly message (no crash, no stack trace)",
+      "status": "PASS",
+      "detail": "not_an_image.png: this image could not be read. It may be damaged or in an unsupported format.",
+      "ms": 201
+    },
+    {
+      "section": "Real files",
+      "name": "PDF tests",
+      "status": "SKIP",
+      "detail": "no PDFs in the folder",
+      "ms": 0
+    },
+    {
+      "section": "Error handling and safety (real files)",
+      "name": "a missing input file fails clearly",
+      "status": "PASS",
+      "detail": "Source file is missing or unreadable: /mnt/New_Volume/JavaScript/Electron_Projects/media-toolkit-pro/test-media/_test_output/2026-10-06T13-35-26-911Z/does-not-exist.mp4",
+      "ms": 102
+    },
+    {
+      "section": "Error handling and safety (real files)",
+      "name": "a corrupt video fails with a short message and the app keeps working",
+      "status": "PASS",
+      "detail": "failed cleanly, next job still works",
+      "ms": 102
+    },
+    {
+      "section": "Error handling and safety (real files)",
+      "name": "an unwritable output folder is reported before any work starts",
+      "status": "PASS",
+      "detail": "Output folder is not accessible",
+      "ms": 101
+    },
+    {
+      "section": "Error handling and safety (real files)",
+      "name": "history record per job, with sizes for successes and success=0 for failures",
+      "status": "PASS",
+      "detail": "23 jobs: 12 succeeded, 11 failed/cancelled",
+      "ms": 0
+    },
+    {
+      "section": "Error handling and safety (real files)",
+      "name": "your original files were not modified, moved or deleted",
+      "status": "PASS",
+      "detail": "5 originals verified byte-for-byte",
+      "ms": 26
+    }
+  ]
+}

@@ -85,10 +85,17 @@ function registerIpc({ db, getWindow, userData }) {
   });
 
   const apiSession = session.fromPartition("persist:mtp-api"); // cookies stay here, invisible to the renderer
-  const API_URL = (process.env.MTP_API_URL || "http://localhost:4000").replace(
-    /\/$/,
-    "",
-  );
+  // const API_URL = (process.env.MTP_API_URL || "http://localhost:4000").replace(
+  //   /\/$/,
+  //   "",
+  // );
+
+  const LIVE_SERVER_URL = "https://media-tool-kit-pro.vercel.app"; 
+  const API_URL = (
+    process.env.MTP_API_URL ||
+    (app.isPackaged ? LIVE_SERVER_URL : "http://localhost:4000")
+  ).replace(/\/$/, "");
+
   const api = createApiClient({
     fetchImpl: (u, o) => apiSession.fetch(u, o),
     getBase: () => API_URL,

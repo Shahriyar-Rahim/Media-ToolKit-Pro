@@ -1,0 +1,95 @@
+name: Continuous Integration & Multi-Platform Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # Job 1: Build .exe (Win), .dmg (macOS), and .deb (Linux) using electron-builder
+  build-multiplatform:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install System Dependencies (Linux Only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools icnsutils graphicsmagick
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # Uses your exact npm script: 'vite build && electron-builder'
+      - name: Build Web Renderer & App Installers
+        run: npm run dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: ${{ contains(github.ref, '-beta') }}
+          files: |
+            release/*.deb
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 2: Build & Publish Snap Package to Canonical Snap Store
+  publish-snap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools icnsutils graphicsmagick
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # Generates the .snap file in release/ using electron-builder
+      - name: Build Snap Package
+        id: build_snap
+        run: |
+          npx electron-builder --linux snap
+          SNAP_FILE=$(ls release/*.snap | head -n 1)
+          echo "snap_file=$SNAP_FILE" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Canonical Snap Store
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build_snap.outputs.snap_file }}
+          release: ${{ contains(github.ref, '-beta') && 'beta' || 'stable' }}
