@@ -100,6 +100,7 @@ function registerIpc({ db, getWindow, userData }) {
     fetchImpl: (u, o) => apiSession.fetch(u, o),
     getBase: () => API_URL,
     version: app.getVersion(),
+    timeoutMs: 45000,
   });
   let publicKey = process.env.MTP_ENTITLEMENT_PUBLIC_KEY || null;
   try {

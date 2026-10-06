@@ -10,7 +10,7 @@
     "build:ui": "vite build",
     "start": "electron .",
     "test": "node --test electron/tests/*.test.js tests/*.test.js",
-    "dist": "vite build && electron-builder",
+    "dist": "vite build && electron-builder --publish never",
     "postinstall": "electron-builder install-app-deps",
     "smoke:electron": "npm run build:ui && node scripts/smoke-electron.js",
     "pack": "vite build && electron-builder --dir",
@@ -42,7 +42,6 @@
   },
   "build": {
     "appId": "com.mediatoolkit.pro",
-    "publish": "never",
     "asarUnpack": [
       "**/node_modules/ffmpeg-static/**",
       "**/node_modules/ffprobe-static/**",
@@ -59,8 +58,7 @@
     "linux": {
       "target": [
         "AppImage",
-        "deb",
-        "snap"
+        "deb"
       ],
       "category": "AudioVideo",
       "icon": "build/icon.png",
