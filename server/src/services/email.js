@@ -1,57 +1,12 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const env = require("../config/env");
 const settings = require("./settings");
 const { EmailLog } = require("../models");
 
-// let transport;
-// const getTransport = () =>
-//   transport ||
-//   (transport = env.smtp.host
-//     ? nodemailer.createTransport({
-//         host: env.smtp.host,
-//         port: env.smtp.port,
-//         secure: env.smtp.secure,
-//         auth: env.smtp.user
-//           ? { user: env.smtp.user, pass: env.smtp.pass }
-//           : undefined,
-//         tls: {
-//           rejectUnauthorized: true,
-//           minVersion: "TLSv1.2",
-//         },
-//         connectionTimeout: 15000, // 10s
-//         greetingTimeout: 15000,
-//         socketTimeout: 15000,
-//       })
-//     : nodemailer.createTransport({ jsonTransport: true })); // dev fallback: logs instead of sending
-
-let transport;
-const getTransport = () => {
-  if (!transport) {
-    console.log(
-      `[SMTP INIT] Host: ${env.smtp.host || "none (jsonTransport)"} | Port: ${env.smtp.port} | Secure: ${env.smtp.secure} | User: ${env.smtp.user || "none"}`,
-    );
-
-    transport = env.smtp.host
-      ? nodemailer.createTransport({
-          host: env.smtp.host,
-          port: env.smtp.port,
-          secure: env.smtp.secure,
-          auth: env.smtp.user
-            ? { user: env.smtp.user, pass: env.smtp.pass }
-            : undefined,
-          tls: {
-            rejectUnauthorized: true,
-            minVersion: "TLSv1.2",
-          },
-          connectionTimeout: 15000, // 15s
-          greetingTimeout: 15000,
-          socketTimeout: 15000,
-        })
-      : nodemailer.createTransport({ jsonTransport: true });
-  }
-  return transport;
-};
-
+// Initialize Resend if API key is configured
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 const esc = (s) =>
   String(s ?? "").replace(
@@ -125,22 +80,41 @@ const T = {
 };
 
 async function send(template, to, data) {
-  const app = (await settings.get("app")).appName;
+  const app = (await settings.get("app")).appName || "Media Toolkit Pro";
   const [subject, body] = T[template](data);
+  const formattedSubject = subject.replace("{app}", app);
   const html = `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;padding:24px"><h2>${esc(app)}</h2><p>${body}</p></div>`;
-  const info = await getTransport().sendMail({
-    from: env.smtp.from,
-    to,
-    subject: subject.replace("{app}", app),
-    html,
-  });
-  if (!env.smtp.host && !env.prod)
+
+  if (resend) {
+    console.log(`[RESEND API] Sending ${template} email to ${to}...`);
+    const { data: resData, error } = await resend.emails.send({
+      from: env.smtp.from || "Media Toolkit Pro <onboarding@resend.dev>",
+      to: [to],
+      subject: formattedSubject,
+      html,
+    });
+
+    if (error) {
+      console.error("[RESEND ERROR]", error);
+      throw new Error(`Resend Delivery Error: ${error.message}`);
+    }
+
     console.log(
-      `[dev email] ${template} -> ${to}`,
+      `[RESEND SUCCESS] Email sent successfully with ID: ${resData.id}`,
+    );
+    return resData;
+  }
+
+  // Development / Local Mock Logging
+  if (!env.prod) {
+    console.log(
+      `[dev mock email] ${template} -> ${to}`,
       data.code ? `code=${data.code}` : "",
     );
-  return info;
+  }
+  return { id: "dev-mock-id" };
 }
+
 // Idempotent: the unique key is claimed BEFORE sending, so repeated callbacks can't produce duplicate mails.
 async function sendOnce(key, template, to, data) {
   try {
@@ -157,5 +131,7 @@ async function sendOnce(key, template, to, data) {
     throw e;
   }
 }
+
 const safe = (p) => p.catch((e) => console.error("[email failed]", e.message)); // email trouble must never fail a payment or request
+
 module.exports = { send, sendOnce, safe };
