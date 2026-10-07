@@ -90,4 +90,4 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         with:
           snap: ${{ steps.build_snap.outputs.snap_file }}
-          release: ${{ contains(github.ref, '-beta') && 'beta' || 'stable' }}
+          release: stable
