@@ -88,7 +88,7 @@ async function send(template, to, data) {
   if (resend) {
     console.log(`[RESEND API] Sending ${template} email to ${to}...`);
     const { data: resData, error } = await resend.emails.send({
-      from: env.smtp.from || "Media Toolkit Pro <onboarding@resend.dev>",
+      from: env.smtp.from || "Media Toolkit Pro <no-reply@no-idea.top>",
       to: [to],
       subject: formattedSubject,
       html,
