@@ -14,9 +14,13 @@ const getTransport = () =>
         auth: env.smtp.user
           ? { user: env.smtp.user, pass: env.smtp.pass }
           : undefined,
-        connectionTimeout: 10000, // 10s
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
+        tls: {
+          rejectUnauthorized: true,
+          minVersion: "TLSv1.2",
+        },
+        connectionTimeout: 15000, // 10s
+        greetingTimeout: 15000,
+        socketTimeout: 15000,
       })
     : nodemailer.createTransport({ jsonTransport: true })); // dev fallback: logs instead of sending
 const esc = (s) =>
