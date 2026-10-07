@@ -18,13 +18,13 @@ function makeRunners({ db, getSettings }) {
       source_path: src, output_path: ok ? out : null, operation: job.type, media_type: MEDIA[job.type],
       created_at: Date.now(), duration_sec: extra.duration ?? null, input_size: inSize, output_size: outSize,
       ratio: inSize && outSize ? +(outSize / inSize).toFixed(3) : null, success: ok ? 1 : 0,
-      processing_ms: Date.now() - started, settings: JSON.stringify(job.options),
+      processing_ms: Date.now() - started, settings: JSON.stringify(job.options), user_id: (job.meta && job.meta.userId) || null,
     });
   };
 
   // Shared wrapper: validate, pick safe output path, run, always record history, clean partial output.
   const single = (ext, work) => async (job, { ctl, progress }) => {
-    const started = Date.now(), settings = getSettings(); let out = null, meta = {};
+    const started = Date.now(), settings = getSettings(job.meta && job.meta.userId); let out = null, meta = {};
     try {
       await assertReadable(job.input);
       const dir = await resolveOutputDir(settings, job.input);
@@ -56,7 +56,7 @@ function makeRunners({ db, getSettings }) {
     }),
     heic: single(() => '.jpg', async (job, out) => { await docs.heicToJpg(job.input, out, job.options.quality); }),
     imagesToPdf: async (job) => {
-      const started = Date.now(), settings = getSettings(); let out = null;
+      const started = Date.now(), settings = getSettings(job.meta && job.meta.userId); let out = null;
       try {
         await Promise.all(job.input.map(assertReadable));
         const dir = await resolveOutputDir(settings, job.input[0]);
@@ -65,7 +65,7 @@ function makeRunners({ db, getSettings }) {
       } catch (e) { record(job, null, false, started); throw e; }
     },
     mergePdf: async (job) => {
-      const started = Date.now(), settings = getSettings(); let out = null;
+      const started = Date.now(), settings = getSettings(job.meta && job.meta.userId); let out = null;
       try {
         await Promise.all(job.input.map(assertReadable));
         const dir = await resolveOutputDir(settings, job.input[0]);

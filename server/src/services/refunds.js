@@ -9,7 +9,7 @@ async function finish(Model, p, { reason, viaGateway, amountMinor, currency, key
   if (p.subscriptionId) await Subscription.updateOne({ _id: p.subscriptionId, status: { $in: ['ACTIVE', 'EXPIRED'] } }, { status: 'REFUNDED', revokedAt: new Date(), revokedReason: `Refunded: ${reason}` }); // history stays; only the status changes
   await releaseDiscount(Model, p);
   const [u, plan] = await Promise.all([User.findById(p.userId).lean(), SubscriptionPlan.findById(p.planId).lean()]);
-  if (u) await email.safe(email.sendOnce(`refund:${key}`, 'refundProcessed', u.email, { amountMinor, currency, plan: plan ? plan.name : 'plan', viaGateway }));
+  if (u) await email.safe(email.sendOnce(`refund:${key}`, 'refundProcessed', u.email, { amountMinor, currency, plan: plan ? plan.name : 'plan', viaGateway, orderId: p.orderId }));
 }
 
 // SSLCommerz: the order of steps keeps our records honest if anything fails midway.

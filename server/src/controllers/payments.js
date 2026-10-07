@@ -8,7 +8,7 @@ const page = (title, msg) => `<!doctype html><meta charset="utf-8"><meta name="v
 
 exports.quote = asyncHandler(async (req, res) => { const q = await checkout.quote(req.user, req.body); res.json({ plan: { id: q.plan._id, name: q.plan.name }, ...q.price, discountCode: q.discount ? q.discount.code : null }); });
 exports.start = asyncHandler(async (req, res) => res.json(await checkout.startCheckout(req.user, req.body)));
-exports.submitManual = asyncHandler(async (req, res) => { const mp = await checkout.submitManual(req.user, req.body); res.status(201).json({ id: mp._id, status: mp.status }); });
+exports.submitManual = asyncHandler(async (req, res) => { const mp = await checkout.submitManual(req.user, req.body); res.status(201).json({ id: mp._id, status: mp.status, orderId: mp.orderId }); });
 
 // Browser lands here from the gateway. The redirect is only UX: the money check happens server-side in completeSsl.
 exports.sslSuccess = asyncHandler(async (req, res) => {

@@ -18,7 +18,7 @@ const planBody = z.object({
   .transform(({ ...p }) => { if (p.isLifetime) delete p.billingPeriodDays; return p; });
 
 const discountBody = z.object({
-  code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{3,30}$/), type: z.enum(['PERCENT', 'FIXED']), value: z.number().min(0), enabled: z.boolean().default(true),
+  code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{3,30}$/), name: z.string().trim().max(60).optional(), type: z.enum(['PERCENT', 'FIXED']), value: z.number().min(0), enabled: z.boolean().default(true),
   startsAt: z.coerce.date().optional().nullable(), endsAt: z.coerce.date().optional().nullable(), planIds: z.array(oid).default([]), maxRedemptions: z.number().int().min(1).optional().nullable(), perUserLimit: z.number().int().min(1).default(1),
 }).refine((d) => d.type !== 'PERCENT' || (d.value > 0 && d.value <= 100), { message: 'percentage must be between 0 and 100', path: ['value'] })
   .refine((d) => d.type !== 'FIXED' || Number.isInteger(d.value), { message: 'fixed amount must be whole minor units', path: ['value'] })
@@ -47,7 +47,7 @@ const S = {
   mfsBody: z.object({ name: z.string().trim().min(2).max(40), accountNumber: z.string().trim().regex(/^\+?\d{8,15}$/, 'invalid account number'), accountType: z.enum(['PERSONAL', 'AGENT', 'MERCHANT']).default('PERSONAL'), instructions: z.string().max(1000).optional(), enabled: z.boolean().default(true), sortOrder: z.number().int().default(0) }),
   faqBody: z.object({ category: z.string().max(40).default('general'), question: z.string().trim().min(3).max(300), answer: z.string().trim().min(3).max(4000), published: z.boolean().default(true), sortOrder: z.number().int().default(0) }),
   settingsGroup: {
-    app: z.object({ appName: z.string().min(1).max(60), supportEmail: email, contactEmail: email, currency: z.string().length(3).toUpperCase(), timezone: z.string().max(60), maintenanceMode: z.boolean(), minDesktopVersion: z.string().regex(/^\d+\.\d+\.\d+$/) }).partial(),
+    app: z.object({ appName: z.string().min(1).max(60), supportEmail: email, contactEmail: email, currency: z.string().length(3).toUpperCase(), timezone: z.string().max(60), maintenanceMode: z.boolean(), minDesktopVersion: z.string().regex(/^\d+\.\d+\.\d+$/), paymentNotifyEmails: z.array(email).max(10) }).partial(),
     security: z.object({ otpExpiryMinutes: z.number().int().min(1).max(30), otpResendSeconds: z.number().int().min(10).max(600), otpMaxAttempts: z.number().int().min(3).max(10), loginOtpRequired: z.boolean(), adminTwoFactorRequired: z.boolean(), maxFailedLogins: z.number().int().min(3).max(20), lockMinutes: z.number().int().min(1).max(1440), adminReauthRequired: z.boolean(), adminReauthMinutes: z.number().int().min(1).max(120), blockedEmailDomains: z.array(z.string().trim().toLowerCase().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/)).max(500) }).partial(),
     freeAccess: z.object({ enabled: z.boolean(), trialDays: z.number().int().min(0).max(365).nullable(), operationCount: z.number().int().min(0).nullable(), dailyLimit: z.number().int().min(0).nullable(), monthlyLimit: z.number().int().min(0).nullable(), allowedFeatures: z.array(z.enum(FEATURES)), maxFileSizeMB: z.number().int().min(1).nullable() }).partial(),
     subscription: z.object({ expiryReminderDays: z.number().int().min(1).max(60) }).partial(),

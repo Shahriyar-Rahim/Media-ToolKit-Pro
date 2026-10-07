@@ -12,7 +12,7 @@ exports.entitlement = asyncHandler(async (req, res) => {
 exports.consume = asyncHandler(async (req, res) => res.json(await usage.consume(req.user, req.body)));
 exports.subscriptions = asyncHandler(async (req, res) => res.json({ subscriptions: await Subscription.find({ userId: req.user._id }).sort({ createdAt: -1 }).select('-paymentKey').lean() }));
 exports.payments = asyncHandler(async (req, res) => {
-  const [ssl, manual] = await Promise.all([Payment.find({ userId: req.user._id }).sort({ createdAt: -1 }).select('tranId amountMinor currency status paidAt createdAt planId').lean(), ManualPayment.find({ userId: req.user._id }).sort({ createdAt: -1 }).select('transactionId amountMinor expectedMinor currency status submittedAt adminNote planId').lean()]);
+  const [ssl, manual] = await Promise.all([Payment.find({ userId: req.user._id }).sort({ createdAt: -1 }).select('orderId tranId amountMinor currency status paidAt createdAt planId').lean(), ManualPayment.find({ userId: req.user._id }).sort({ createdAt: -1 }).select('orderId transactionId amountMinor expectedMinor currency status submittedAt adminNote planId').lean()]);
   res.json({ ssl, manual });
 });
 exports.myBugs = asyncHandler(async (req, res) => res.json({ bugs: await BugReport.find({ userId: req.user._id }).sort({ createdAt: -1 }).select('reportId title status createdAt replies').lean() }));

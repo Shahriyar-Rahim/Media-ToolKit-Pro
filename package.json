@@ -61,7 +61,7 @@
         "deb"
       ],
       "category": "AudioVideo",
-      "icon": "build/icon.png",
+      "icon": "build/icons",
       "maintainer": "Media Toolkit Pro <support@example.com>"
     },
     "snap": {

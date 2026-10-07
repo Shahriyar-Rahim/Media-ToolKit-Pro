@@ -47,9 +47,9 @@ exports.dashboard = asyncHandler(async (_req, res) => {
 
 exports.users = asyncHandler(async (req, res) => { const { q, status } = req.query; const f = {}; if (q) f.email = new RegExp(esc(q), 'i'); if (status === 'disabled') f.disabledAt = { $ne: null }; if (status === 'unverified') f.emailVerifiedAt = null; res.json(await paged(M.User, f, req.query, { select: 'email name role emailVerifiedAt disabledAt lastLoginAt createdAt' })); });
 exports.user = asyncHandler(async (req, res) => {
-  const u = await M.User.findById(req.params.id).lean(); if (!u) throw missing();
+  const u = await M.User.findById(req.params.id).select('+sessions').lean(); if (!u) throw missing();
   const [subscriptions, ssl, manual, ent] = await Promise.all([M.Subscription.find({ userId: u._id }).sort({ createdAt: -1 }).lean(), M.Payment.find({ userId: u._id }).sort({ createdAt: -1 }).limit(50).lean(), M.ManualPayment.find({ userId: u._id }).sort({ createdAt: -1 }).limit(50).lean(), usage.current(u)]);
-  res.json({ user: { id: u._id, email: u.email, name: u.name, role: u.role, emailVerifiedAt: u.emailVerifiedAt, disabledAt: u.disabledAt, lastLoginAt: u.lastLoginAt, lastLoginIp: u.lastLoginIp, createdAt: u.createdAt }, subscriptions, payments: { ssl, manual }, entitlement: ent });
+  res.json({ user: { id: u._id, email: u.email, name: u.name, role: u.role, emailVerifiedAt: u.emailVerifiedAt, disabledAt: u.disabledAt, lastLoginAt: u.lastLoginAt, lastLoginIp: u.lastLoginIp, lastSeenAt: u.lastSeenAt, lastSeenIp: u.lastSeenIp, createdAt: u.createdAt, sessions: (u.sessions || []).map(({ ua, ip, createdAt, expiresAt }) => ({ ua, ip, createdAt, expiresAt })) }, subscriptions, payments: { ssl, manual }, entitlement: ent });
 });
 exports.setDisabled = (disable) => asyncHandler(async (req, res) => {
   const u = await M.User.findById(req.params.id); if (!u) throw missing();
@@ -76,8 +76,8 @@ exports.mfs = { ...crud(M.MFSProvider, 'MFS provider', 'mfs'), reorder: asyncHan
 exports.faq = crud(M.FAQ, 'FAQ', 'faq');
 
 // ---- payments ----
-exports.sslPayments = asyncHandler(async (req, res) => { const f = {}; if (req.query.status) f.status = req.query.status; res.json(await paged(M.Payment, f, req.query, { populate: { path: 'userId', select: 'email' }, select: '-validation -gatewayUrl' })); });
-exports.manualPayments = asyncHandler(async (req, res) => { const f = {}; if (req.query.status) f.status = req.query.status; res.json(await paged(M.ManualPayment, f, req.query, { populate: [{ path: 'userId', select: 'email' }, { path: 'providerId', select: 'name' }, { path: 'planId', select: 'name' }] })); });
+exports.sslPayments = asyncHandler(async (req, res) => { const f = {}; if (req.query.status) f.status = req.query.status; if (req.query.q) { const rx = new RegExp(esc(req.query.q), 'i'); f.$or = [{ orderId: rx }, { tranId: rx }]; } res.json(await paged(M.Payment, f, req.query, { populate: [{ path: 'userId', select: 'email name' }, { path: 'discountId', select: 'code name' }], select: '-validation -gatewayUrl' })); });
+exports.manualPayments = asyncHandler(async (req, res) => { const f = {}; if (req.query.status) f.status = req.query.status; if (req.query.q) { const rx = new RegExp(esc(req.query.q), 'i'); f.$or = [{ orderId: rx }, { transactionId: rx }, { senderNumber: rx }]; } res.json(await paged(M.ManualPayment, f, req.query, { populate: [{ path: 'userId', select: 'email name' }, { path: 'providerId', select: 'name' }, { path: 'planId', select: 'name' }, { path: 'discountId', select: 'code name' }] })); });
 exports.reviewManual = asyncHandler(async (req, res) => { const mp = await checkout.reviewManual(req.params.id, req.user, { approve: req.body.approve, note: req.body.note }); await audit(req, req.body.approve ? 'payment.approved' : 'payment.rejected', 'ManualPayment', mp._id, { txn: mp.transactionId }); res.json(mp); });
 exports.gateways = asyncHandler(async (_req, res) => { const rows = await M.PaymentGatewayConfig.find().lean(); res.json({ SSLCOMMERZ: !!(rows.find((r) => r.key === 'SSLCOMMERZ') || {}).enabled, MFS: !!(rows.find((r) => r.key === 'MFS') || {}).enabled }); });
 exports.setGateway = asyncHandler(async (req, res) => { await M.PaymentGatewayConfig.findOneAndUpdate({ key: req.params.key }, { enabled: req.body.enabled, updatedBy: req.user._id }, { upsert: true }); await audit(req, `gateway.${req.body.enabled ? 'enabled' : 'disabled'}`, 'PaymentGateway', req.params.key); res.json({ ok: true }); });

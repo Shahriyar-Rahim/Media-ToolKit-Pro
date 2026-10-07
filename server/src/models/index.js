@@ -14,8 +14,8 @@ const User = model('User', new Schema({
   twoFactorEnabled: { type: Boolean, default: false },
   emailCanonical: { type: String, index: true }, reauthUntil: Date, mustResetPassword: { type: Boolean, default: false },
   failedLogins: { type: Number, default: 0 }, lockUntil: Date,
-  lastLoginAt: Date, lastLoginIp: String, passwordChangedAt: Date,
-  sessions: { type: [{ tokenHash: String, expiresAt: Date, ua: String, createdAt: Date }], select: false },
+  lastLoginAt: Date, lastLoginIp: String, lastSeenAt: Date, lastSeenIp: String, passwordChangedAt: Date,
+  sessions: { type: [{ tokenHash: String, expiresAt: Date, ua: String, ip: String, createdAt: Date }], select: false },
   freeTrialStartedAt: Date, // set at email verification
 }, T));
 
@@ -44,7 +44,7 @@ const Subscription = model('Subscription', new Schema({
   planSnapshot: Schema.Types.Mixed, // entitlements + name frozen at purchase, so later plan edits/archival don't rewrite history
   status: { type: String, enum: SUB_STATUS, default: 'PENDING', index: true },
   startsAt: Date, endsAt: Date, isLifetime: { type: Boolean, default: false },
-  paymentKey: { type: String, unique: true, sparse: true }, // "ssl:<tranId>" | "mfs:<id>" | "grant:<id>" - enforces idempotent activation
+  paymentKey: { type: String, unique: true, sparse: true }, orderId: String, // "ssl:<tranId>" | "mfs:<id>" | "grant:<id>" - enforces idempotent activation
   paymentMethod: { type: String, enum: ['SSLCOMMERZ', 'MFS', 'FREE', 'ADMIN_GRANT'] },
   originalPriceMinor: Number, discountMinor: { type: Number, default: 0 }, finalPriceMinor: Number, currency: String,
   discountId: oid('Discount'), revokedAt: Date, revokedReason: String, grantedBy: oid('User'),
@@ -52,7 +52,7 @@ const Subscription = model('Subscription', new Schema({
 Subscription.schema.index({ userId: 1, status: 1, endsAt: 1 });
 
 const Discount = model('Discount', new Schema({
-  code: { type: String, required: true, unique: true, uppercase: true, trim: true },
+  code: { type: String, required: true, unique: true, uppercase: true, trim: true }, name: { type: String, trim: true, maxlength: 60 },
   type: { type: String, enum: ['PERCENT', 'FIXED'], required: true }, value: { type: Number, required: true, min: 0 }, // PERCENT: 0-100, FIXED: minor units
   enabled: { type: Boolean, default: true }, startsAt: Date, endsAt: Date, planIds: [oid('SubscriptionPlan')], // empty = all plans
   maxRedemptions: Number, perUserLimit: { type: Number, default: 1 }, redeemedCount: { type: Number, default: 0 },
@@ -60,7 +60,7 @@ const Discount = model('Discount', new Schema({
 
 const Payment = model('Payment', new Schema({ // SSLCommerz
   userId: { ...oid('User'), required: true, index: true }, planId: oid('SubscriptionPlan'), discountId: oid('Discount'),
-  tranId: { type: String, required: true, unique: true }, amountMinor: { type: Number, required: true }, currency: { type: String, required: true },
+  tranId: { type: String, required: true, unique: true }, orderId: { type: String, unique: true, sparse: true }, amountMinor: { type: Number, required: true }, currency: { type: String, required: true },
   originalPriceMinor: Number, discountMinor: Number,
   status: { type: String, enum: ['INITIATED', 'PAID', 'FAILED', 'CANCELLED', 'EXPIRED', 'REFUNDING', 'REFUNDED'], default: 'INITIATED', index: true },
   refundedAt: Date, refundedBy: oid('User'), refundReason: String, refundRef: String, refundSentAt: Date, refundLockUntil: Date, refundGatewayStatus: String, refundError: String, discountReleasedAt: Date,
@@ -76,7 +76,7 @@ const MFSProvider = model('MFSProvider', new Schema({
 
 const ManualPayment = model('ManualPayment', new Schema({
   userId: { ...oid('User'), required: true, index: true }, planId: { ...oid('SubscriptionPlan'), required: true }, providerId: { ...oid('MFSProvider'), required: true },
-  discountId: oid('Discount'), transactionId: { type: String, required: true, trim: true, uppercase: true }, senderNumber: { type: String, required: true },
+  discountId: oid('Discount'), orderId: { type: String, unique: true, sparse: true }, transactionId: { type: String, required: true, trim: true, uppercase: true }, senderNumber: { type: String, required: true },
   amountMinor: { type: Number, required: true }, expectedMinor: { type: Number, required: true }, currency: String, originalPriceMinor: Number, discountMinor: Number,
   note: { type: String, maxlength: 300 }, status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'REFUNDED'], default: 'PENDING', index: true },
   refundedAt: Date, refundedBy: oid('User'), refundReason: String, discountReleasedAt: Date,

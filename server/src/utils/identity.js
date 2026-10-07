@@ -14,4 +14,18 @@ function checkScreenshot(dataUrl, maxBytes = 600000) {
   const png = buf.slice(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])), jpg = buf.slice(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
   return (m[1] === 'png' && png) || (m[1] === 'jpeg' && jpg) ? null : 'Screenshot content does not match its type';
 }
-module.exports = { canonicalEmail, cmpVersion, checkScreenshot };
+
+// Human-friendly, unguessable order numbers like ORD-251005-K7M2QX (no 0/O/1/I/L lookalikes).
+const B32 = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function newOrderId(now = new Date()) {
+  const ymd = `${String(now.getUTCFullYear()).slice(2)}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+  let tail = ''; for (const b of require('crypto').randomBytes(6)) tail += B32[b % B32.length];
+  return `ORD-${ymd}-${tail}`;
+}
+// The caller's address as Express resolved it (honours TRUST_PROXY), normalised: IPv4-mapped IPv6 and loopback made readable.
+function clientIp(req) {
+  let ip = String((req && (req.ip || (req.socket && req.socket.remoteAddress))) || '').trim();
+  ip = ip.replace(/^::ffff:/i, ''); if (ip === '::1') ip = '127.0.0.1';
+  return ip.slice(0, 64) || null;
+}
+module.exports = { canonicalEmail, cmpVersion, checkScreenshot, newOrderId, clientIp };

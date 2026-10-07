@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { call, FEATURE_LABELS } from '../../lib/api.js';
 import { Card, Field, Btn, Msg, useAction, useLoad } from '../../components/ui.jsx';
 
+// Settings that are lists of text lines (one per line in the form).
+const LIST_KEYS = { blockedEmailDomains: ['Blocked email domains', 'One per line, e.g. mailinator.com. People using these cannot register.'], paymentNotifyEmails: ['Payment notification emails', 'One per line. These addresses are emailed about every new payment. Leave empty to notify all active admins.'] };
 const NUMERIC_NULLABLE = { freeAccess: ['trialDays', 'operationCount', 'dailyLimit', 'monthlyLimit', 'maxFileSizeMB'] };
 const TITLES = { app: 'Application', security: 'Security and OTP', freeAccess: 'Free access (trial)', subscription: 'Subscriptions' };
 const HINTS = { minDesktopVersion: 'Older desktop apps see an "update required" notice and online features pause; local tools keep working.', adminReauthRequired: 'Sensitive admin actions (refunds, grants, settings...) ask for an emailed code first.', adminReauthMinutes: 'How long one confirmation stays valid.', trialDays: 'Days after email verification. Empty = no time limit.', operationCount: 'Total free operations. Empty = unlimited.', dailyLimit: 'Per day. Empty = unlimited.', monthlyLimit: 'Per month. Empty = unlimited.', maxFileSizeMB: 'Empty = no limit.', maintenanceMode: 'Online features show "Service temporarily unavailable". Offline tools keep working.', adminTwoFactorRequired: 'Admins must enter an email code at every login.' };
@@ -16,15 +18,15 @@ function VersionCard() {
   return <Card title="Versions">{data ? <p className="text-sm">Server <strong>v{data.server}</strong> · Minimum supported desktop app <strong>v{data.minDesktopVersion}</strong> <span style={{ color: 'var(--mute)' }}>(change it below under Application)</span></p> : <p className="text-sm">Loading…</p>}</Card>;
 }
 function Group({ name, initial, onSaved }) {
-  const toForm = (x) => ({ ...x, ...(x.blockedEmailDomains ? { blockedEmailDomains: x.blockedEmailDomains.join('\n') } : {}) });
+  const toForm = (x) => Object.fromEntries(Object.entries(x).map(([k, v]) => [k, LIST_KEYS[k] && Array.isArray(v) ? v.join('\n') : v]));
   const [v, setV] = useState(toForm(initial)); const a = useAction(); useEffect(() => setV(toForm(initial)), [initial]); // eslint-disable-line
   const save = () => a.run(async () => {
-    const body = {}; for (const [k, val] of Object.entries(v)) body[k] = k === 'blockedEmailDomains' ? String(val).split(/[\s,]+/).filter(Boolean) : NUMERIC_NULLABLE[name] && NUMERIC_NULLABLE[name].includes(k) ? (val === '' || val == null ? null : Number(val)) : typeof initial[k] === 'number' ? Number(val) : val;
+    const body = {}; for (const [k, val] of Object.entries(v)) body[k] = LIST_KEYS[k] ? String(val).split(/[\s,]+/).filter(Boolean) : NUMERIC_NULLABLE[name] && NUMERIC_NULLABLE[name].includes(k) ? (val === '' || val == null ? null : Number(val)) : typeof initial[k] === 'number' ? Number(val) : val;
     await call('PUT', `/api/admin/settings/${name}`, body); onSaved();
   }, 'Saved. Changes apply within a few seconds.');
   return (<Card title={TITLES[name]}><div className="grid gap-3">{Object.entries(v).map(([k, val]) => {
     const set = (x) => setV({ ...v, [k]: x });
-    if (k === 'blockedEmailDomains') return <Field key={k} label="Blocked email domains" hint="One per line, e.g. mailinator.com. People using these cannot register."><textarea rows={4} value={val} onChange={(e) => set(e.target.value)} style={{ background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, padding: 8 }} /></Field>;
+    if (LIST_KEYS[k]) return <Field key={k} label={LIST_KEYS[k][0]} hint={LIST_KEYS[k][1]}><textarea rows={4} value={val} onChange={(e) => set(e.target.value)} style={{ background: 'var(--bg)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 6, padding: 8 }} /></Field>;
     if (Array.isArray(val)) return <fieldset key={k}><legend className="text-sm mb-1" style={{ color: 'var(--mute)' }}>Free tools</legend><div className="grid grid-cols-2 gap-1">{Object.keys(FEATURE_LABELS).map((f) => <label key={f} className="text-sm"><input type="checkbox" checked={val.includes(f)} onChange={(e) => set(e.target.checked ? [...val, f] : val.filter((x) => x !== f))} /> {FEATURE_LABELS[f]}</label>)}</div></fieldset>;
     if (typeof val === 'boolean') return <Field key={k} label={k} hint={HINTS[k]}><input type="checkbox" checked={val} onChange={(e) => set(e.target.checked)} style={{ width: 20, height: 20 }} /></Field>;
     const isNum = typeof val === 'number' || (NUMERIC_NULLABLE[name] || []).includes(k);

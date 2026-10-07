@@ -7,9 +7,9 @@ class JobQueue {
     this.jobs = new Map(); this.active = 0;
   }
   setConcurrency(n) { this.concurrency = Math.min(8, Math.max(1, n | 0)); this._pump(); }
-  enqueue(type, input, options = {}) {
+  enqueue(type, input, options = {}, meta = {}) {
     if (!this.runners[type]) throw new Error(`Unknown job type: ${type}`);
-    const job = { id: randomUUID(), type, input, options, status: S.QUEUED, progress: { percent: null },
+    const job = { id: randomUUID(), type, input, options, meta /* meta.userId = the account that owns this job */, status: S.QUEUED, progress: { percent: null },
       startedAt: null, completedAt: null, output: null, error: null, _ctl: { cancelled: false, kill: null } };
     this.jobs.set(job.id, job); this._emit(job); this._pump(); return job.id;
   }
@@ -22,7 +22,7 @@ class JobQueue {
   retry(id) {
     const j = this.jobs.get(id);
     if (!j || ![S.FAILED, S.CANCELLED].includes(j.status)) return null;
-    return this.enqueue(j.type, j.input, j.options);
+    return this.enqueue(j.type, j.input, j.options, j.meta);
   }
   list() { return [...this.jobs.values()].map(this._view); }
   _view(j) { const { _ctl, ...v } = j; return v; }

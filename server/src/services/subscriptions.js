@@ -18,7 +18,7 @@ async function assertPurchasable(user, plan, finalPriceMinor) {
 
 // Idempotent by paymentKey: the same payment can never yield two subscriptions.
 // Same-plan renewal stacks onto the current end date so paid time is never lost.
-async function activate({ userId, plan, paymentKey, method, price, discountId, grantedBy }) {
+async function activate({ userId, plan, paymentKey, method, price, discountId, grantedBy, orderId }) {
   const existing = await Subscription.findOne({ paymentKey }); if (existing) return existing;
   const now = new Date();
   let startsAt = now, endsAt = null;
@@ -29,7 +29,7 @@ async function activate({ userId, plan, paymentKey, method, price, discountId, g
   let sub;
   try {
     sub = await Subscription.create({ userId, planId: plan._id, planSnapshot: snapshot(plan), status: 'ACTIVE', startsAt: startsAt > now ? now : startsAt, endsAt, isLifetime: plan.isLifetime,
-      paymentKey, paymentMethod: method, originalPriceMinor: price.originalPriceMinor, discountMinor: price.discountMinor, finalPriceMinor: price.finalPriceMinor, currency: price.currency, discountId, grantedBy });
+      paymentKey, orderId, paymentMethod: method, originalPriceMinor: price.originalPriceMinor, discountMinor: price.discountMinor, finalPriceMinor: price.finalPriceMinor, currency: price.currency, discountId, grantedBy });
   } catch (e) { if (e.code === 11000) return Subscription.findOne({ paymentKey }); throw e; } // lost a race: return the winner
   sub.justCreated = true; // not persisted: lets callers tell "I created this" from "a concurrent request already did"
   const user = await User.findById(userId).lean();

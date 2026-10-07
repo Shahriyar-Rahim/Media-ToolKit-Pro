@@ -1,7 +1,7 @@
 const { ApplicationSetting } = require('../models');
 // Every business rule the admin controls lives here as data. Defaults only apply until an admin saves a value.
 const DEFAULTS = {
-  app: { appName: 'Media Toolkit Pro', supportEmail: 'support@example.com', contactEmail: 'contact@example.com', currency: 'BDT', timezone: 'Asia/Dhaka', maintenanceMode: false, minDesktopVersion: '0.1.0' },
+  app: { appName: 'Media Toolkit Pro', supportEmail: 'support@example.com', contactEmail: 'contact@example.com', currency: 'BDT', timezone: 'Asia/Dhaka', maintenanceMode: false, minDesktopVersion: '0.1.0', paymentNotifyEmails: [] },
   security: { otpExpiryMinutes: 5, otpResendSeconds: 60, otpMaxAttempts: 5, loginOtpRequired: false, adminTwoFactorRequired: true, maxFailedLogins: 8, lockMinutes: 15, adminReauthRequired: true, adminReauthMinutes: 15, blockedEmailDomains: [] },
   freeAccess: { enabled: true, trialDays: 7, operationCount: 10, dailyLimit: 5, monthlyLimit: 10, allowedFeatures: ['videoCompression', 'audioConversion', 'heicConversion', 'pdfCreate', 'pdfMerge', 'mediaVault'], maxFileSizeMB: 500 },
   subscription: { expiryReminderDays: 3 },

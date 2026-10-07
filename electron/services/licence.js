@@ -59,6 +59,7 @@ function createLicence({ db, api, publicKey, now = () => Date.now(), uuid = () =
     const r = await api.request('GET', '/api/auth/me');
     if (r.networkError) { const c = load(); return c.user && c.token && offlineOk(c) ? state(true) : { signedIn: false, offlineNoCache: !!c.user }; }
     if (r.status !== 200) { clear(); return { signedIn: false }; }
+    const prev = load(); if (prev.user && String(prev.user.id) !== String(r.data.user.id)) clear(); // a DIFFERENT account on this computer must never inherit the previous account's cached plan or queued offline usage
     const c = load(); c.user = r.data.user; save(c); return refresh();
   }
   function offlineOk(c) { try { if (!publicKey) return false; verifySnapshot(c.token, publicKey, now()); return true; } catch { return false; } }

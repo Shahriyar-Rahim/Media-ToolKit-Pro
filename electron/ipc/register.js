@@ -74,33 +74,40 @@ function registerIpc({ db, getWindow, userData }) {
   process.on("unhandledRejection", (e) =>
     log.app("error", "unhandled rejection", { e: e && (e.stack || e.message) }),
   );
-  const getSettings = () => ({ ...DEFAULTS, ...db.getSetting("app", {}) });
+  // ---- who is signed in right now (several accounts can share one computer; nothing local is shared between them) ----
+  let licence; // created below
+  const currentUserId = () => {
+    const s = licence && licence.state();
+    return s && s.signedIn && s.user ? String(s.user.id) : null;
+  };
+  const settingsKey = (uid) => (uid ? `app:${uid}` : "app");
+  const getSettings = (uid = currentUserId()) => ({
+    ...DEFAULTS,
+    ...db.getSetting("app", {}),
+    ...(uid ? db.getSetting(settingsKey(uid), {}) : {}),
+  }); // per-account output folder, theme...
+  const mine = (j) =>
+    !!(j.meta && j.meta.userId) && j.meta.userId === currentUserId();
   const queue = new JobQueue({
     concurrency: getSettings().concurrency,
     runners: makeRunners({ db, getSettings }),
     onUpdate: (job) => {
       const w = getWindow();
-      if (w && !w.isDestroyed()) w.webContents.send("jobs:update", job);
-    },
+      if (w && !w.isDestroyed() && mine(job))
+        w.webContents.send("jobs:update", job);
+    }, // only the owner's window ever hears about a job
   });
 
   const apiSession = session.fromPartition("persist:mtp-api"); // cookies stay here, invisible to the renderer
-  // const API_URL = (process.env.MTP_API_URL || "http://localhost:4000").replace(
-  //   /\/$/,
-  //   "",
-  // );
-
-  const LIVE_SERVER_URL = "https://media-toolkit-pro.onrender.com"; 
+  const LIVE_SERVER_URL = "https://media-toolkit-pro.onrender.com";
   const API_URL = (
     process.env.MTP_API_URL ||
     (app.isPackaged ? LIVE_SERVER_URL : "http://localhost:4000")
   ).replace(/\/$/, "");
-
   const api = createApiClient({
     fetchImpl: (u, o) => apiSession.fetch(u, o),
     getBase: () => API_URL,
     version: app.getVersion(),
-    timeoutMs: 300000,
   });
   let publicKey = process.env.MTP_ENTITLEMENT_PUBLIC_KEY || null;
   try {
@@ -113,7 +120,7 @@ function registerIpc({ db, getWindow, userData }) {
   } catch {
     /* offline mode stays disabled */
   }
-  const licence = createLicence({ db, api, publicKey });
+  licence = createLicence({ db, api, publicKey });
 
   // Reject any IPC call not coming from our own main window's top frame.
   const handle = (channel, fn) =>
@@ -149,7 +156,7 @@ function registerIpc({ db, getWindow, userData }) {
       properties: ["openDirectory", "createDirectory"],
     });
     if (r.canceled) return getSettings();
-    db.setSetting("app", {
+    db.setSetting(settingsKey(currentUserId()), {
       ...getSettings(),
       outputMode: "custom",
       outputDir: r.filePaths[0],
@@ -170,7 +177,7 @@ function registerIpc({ db, getWindow, userData }) {
     if (p.theme != null)
       next.theme =
         oneOf(p.theme, ["light", "dark", "system"], "theme") && p.theme;
-    db.setSetting("app", next);
+    db.setSetting(settingsKey(currentUserId()), next);
     return next;
   });
   handle("media:detectHardware", () => ff.detectHardware());
@@ -193,7 +200,9 @@ function registerIpc({ db, getWindow, userData }) {
       fileSize: size,
       fileCount: v.batchSize,
     }); // plan + usage check happens BEFORE any work starts
-    return queue.enqueue(v.type, v.input, v.options);
+    return queue.enqueue(v.type, v.input, v.options, {
+      userId: currentUserId(),
+    });
   });
   handle("api:request", (p) => {
     if (!p || typeof p !== "object") fail("payload");
@@ -240,7 +249,7 @@ function registerIpc({ db, getWindow, userData }) {
   handle("log:recent", () => ({ text: log.recent() }));
   handle("vault:thumbnail", async (id) => {
     isStr(id, 64) || fail("id");
-    return thumbOf(db.getHistoryRow(id));
+    return thumbOf(db.getHistoryRow(id, currentUserId()));
   });
   handle("update:check", () => updater.check());
   handle("update:download", () => updater.download());
@@ -250,17 +259,24 @@ function registerIpc({ db, getWindow, userData }) {
     apiUrl: API_URL,
     offlineCapable: !!publicKey,
   }));
+  const owned = (id) => {
+    const j = queue.list().find((x) => x.id === id);
+    return !!j && mine(j);
+  };
   handle("jobs:cancel", (id) => {
     isStr(id, 64) || fail("id");
-    return queue.cancel(id);
+    return owned(id) ? queue.cancel(id) : false;
   });
   handle("jobs:retry", (id) => {
     isStr(id, 64) || fail("id");
-    return queue.retry(id);
+    return owned(id) ? queue.retry(id) : null;
   });
-  handle("jobs:list", () => queue.list());
-  handle("history:list", (p = {}) =>
-    db.listHistory({
+  handle("jobs:list", () => queue.list().filter(mine));
+  handle("history:list", (p = {}) => {
+    const userId = currentUserId();
+    db.claimLegacy(userId);
+    return db.listHistory({
+      userId,
       search: isStr(p.search, 200) ? p.search : "",
       mediaType: ["video", "audio", "image", "pdf"].includes(p.mediaType)
         ? p.mediaType
@@ -268,21 +284,23 @@ function registerIpc({ db, getWindow, userData }) {
       sort: ["new", "old", "size"].includes(p.sort) ? p.sort : "new",
       limit: 100,
       offset: Number.isInteger(p.offset) ? p.offset : 0,
-    }),
-  );
+    });
+  });
   handle("history:delete", (id) => {
     isStr(id, 64) || fail("id");
-    db.deleteHistory(id);
+    db.deleteHistory(id, currentUserId());
     return true;
   });
   handle("history:clear", () => {
-    db.clearHistory();
+    db.clearHistory(currentUserId());
     return true;
   });
   // Only paths that exist in history may be opened, so the renderer can't open arbitrary files.
   const known = (p) =>
     isAbs(p) &&
-    db.listHistory({ limit: 100000 }).some((h) => h.output_path === p);
+    db
+      .listHistory({ userId: currentUserId(), limit: 100000 })
+      .some((h) => h.output_path === p);
   // log every failed job in the right place (FFmpeg vs app), never shown raw to users
   queue.onUpdate = ((prev) => (job) => {
     if (job.status === "FAILED")
