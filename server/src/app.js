@@ -12,8 +12,8 @@ const env = require("./config/env");
 function createApp() {
   const app = express();
   app.disable("x-powered-by");
-  if (process.env.TRUST_PROXY)
-    app.set("trust proxy", +process.env.TRUST_PROXY || 1); // needed behind a reverse proxy so rate limits see real IPs
+  if (env.prod || process.env.TRUST_PROXY)
+    app.set("trust proxy", 1);
   app.use(sec.helmet, sec.cors, sec.limits.general);
   app.use("/api/bugs", express.json({ limit: "1mb" })); // screenshots: validated again in the controller
   app.use(express.json({ limit: "100kb" }), cookieParser());

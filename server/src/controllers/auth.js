@@ -41,7 +41,20 @@ exports.resendVerification = asyncHandler(async (req, res) => {
   res.json({ ok: true });
 });
 exports.login = asyncHandler(async (req, res) => {
-  const r = await auth.login({ ...req.body, ip: req.ip });
+  let r;
+  try {
+    r = await auth.login({ ...req.body, ip: req.ip });
+  } catch (err) {
+    if (err.code === "ETIMEDOUT" || err.command === "CONN") {
+      return res.status(500).json({
+        error:
+          "Failed to send login verification code due to SMTP connection timeout. Please try again.",
+        code: "EMAIL_TIMEOUT",
+      });
+    }
+    throw err;
+  }
+
   if (r.otpRequired) return res.json({ otpRequired: true });
   return begin(req, res, r.user);
 });

@@ -28,8 +28,10 @@ module.exports = {
   entitlementPublicKey: keys.publicKey,
   smtp: {
     host: process.env.SMTP_HOST,
-    port: +process.env.SMTP_PORT || 587,
-    secure: process.env.SMTP_SECURE === "true",
+    port: +process.env.SMTP_PORT || 465,
+    secure: process.env.SMTP_SECURE
+      ? process.env.SMTP_SECURE === "true"
+      : (+process.env.SMTP_PORT || 465) === 465,
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
     from: process.env.SMTP_FROM || "Media Toolkit Pro <no-reply@localhost>",
