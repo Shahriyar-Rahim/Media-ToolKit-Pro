@@ -11,6 +11,7 @@ app.commandLine.appendSwitch("disable-gpu-process-crash-limit");
 
 if (process.platform === "linux") {
   app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch("disable-dev-shm-usage");
 }
 
 function createWindow() {

@@ -73,7 +73,11 @@
         "network",
         "opengl",
         "wayland",
-        "x11"
+        "x11",
+        "shared-memory"
+      ],
+      "slots": [
+        "shared-memory"
       ]
     },
     "win": {
