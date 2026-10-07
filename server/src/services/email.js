@@ -3,26 +3,56 @@ const env = require("../config/env");
 const settings = require("./settings");
 const { EmailLog } = require("../models");
 
+// let transport;
+// const getTransport = () =>
+//   transport ||
+//   (transport = env.smtp.host
+//     ? nodemailer.createTransport({
+//         host: env.smtp.host,
+//         port: env.smtp.port,
+//         secure: env.smtp.secure,
+//         auth: env.smtp.user
+//           ? { user: env.smtp.user, pass: env.smtp.pass }
+//           : undefined,
+//         tls: {
+//           rejectUnauthorized: true,
+//           minVersion: "TLSv1.2",
+//         },
+//         connectionTimeout: 15000, // 10s
+//         greetingTimeout: 15000,
+//         socketTimeout: 15000,
+//       })
+//     : nodemailer.createTransport({ jsonTransport: true })); // dev fallback: logs instead of sending
+
 let transport;
-const getTransport = () =>
-  transport ||
-  (transport = env.smtp.host
-    ? nodemailer.createTransport({
-        host: env.smtp.host,
-        port: env.smtp.port,
-        secure: env.smtp.secure,
-        auth: env.smtp.user
-          ? { user: env.smtp.user, pass: env.smtp.pass }
-          : undefined,
-        tls: {
-          rejectUnauthorized: true,
-          minVersion: "TLSv1.2",
-        },
-        connectionTimeout: 15000, // 10s
-        greetingTimeout: 15000,
-        socketTimeout: 15000,
-      })
-    : nodemailer.createTransport({ jsonTransport: true })); // dev fallback: logs instead of sending
+const getTransport = () => {
+  if (!transport) {
+    console.log(
+      `[SMTP INIT] Host: ${env.smtp.host || "none (jsonTransport)"} | Port: ${env.smtp.port} | Secure: ${env.smtp.secure} | User: ${env.smtp.user || "none"}`,
+    );
+
+    transport = env.smtp.host
+      ? nodemailer.createTransport({
+          host: env.smtp.host,
+          port: env.smtp.port,
+          secure: env.smtp.secure,
+          auth: env.smtp.user
+            ? { user: env.smtp.user, pass: env.smtp.pass }
+            : undefined,
+          tls: {
+            rejectUnauthorized: true,
+            minVersion: "TLSv1.2",
+          },
+          connectionTimeout: 15000, // 15s
+          greetingTimeout: 15000,
+          socketTimeout: 15000,
+        })
+      : nodemailer.createTransport({ jsonTransport: true });
+  }
+  return transport;
+};
+
+
 const esc = (s) =>
   String(s ?? "").replace(
     /[&<>"]/g,

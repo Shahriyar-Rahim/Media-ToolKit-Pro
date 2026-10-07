@@ -45,6 +45,7 @@ exports.login = asyncHandler(async (req, res) => {
   try {
     r = await auth.login({ ...req.body, ip: req.ip });
   } catch (err) {
+    console.error("[LOGIN ERROR DETAILS]:", err);
     if (err.code === "ETIMEDOUT" || err.command === "CONN") {
       return res.status(500).json({
         error:
