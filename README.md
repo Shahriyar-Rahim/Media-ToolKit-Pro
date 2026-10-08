@@ -3,7 +3,7 @@
 A modern media workflow platform for creators, teams, and businesses that need fast, reliable, and secure media processing.
 
 [![GitHub release](https://img.shields.io/github/v/release/Shahriyar-Rahim/Media-ToolKit-Pro)](https://github.com/Shahriyar-Rahim/Media-ToolKit-Pro/releases)
-[![License](https://img.shields.io/badge/license-Unlicense-blue.svg)](UNLICENSE)
+[![License](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB)](https://react.dev/)
 [![Electron](https://img.shields.io/badge/Electron-33-2E7DFF)](https://www.electronjs.org/)
