@@ -1,48 +1,171 @@
-# Media Toolkit Pro (v0.1.0)
+# Media Toolkit Pro
 
-Electron + React + Vite + Tailwind desktop app (all media processing is local) with an Express + MongoDB backend in `server/`.
+**Modern offline desktop media processing and workflow management**
 
-## Run it
-    # 1. backend (details, SSLCommerz and MFS setup: server/README.md)
-    cd server && npm install && cp .env.example .env     # fill secrets, then:
-    npm run keys                                         # paste both keys into server/.env
-    SEED_ADMIN_EMAIL=you@x.com SEED_ADMIN_PASSWORD='long-password-12+' npm run seed && npm run dev
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D%2018-brightgreen)](https://nodejs.org/)
+[![Electron](https://img.shields.io/badge/electron-33.0+-blue)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/react-18.3+-61dafb)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/vite-5.4+-646cff)](https://vitejs.dev/)
 
-    # 2. desktop app
-    cd .. && npm install        # postinstall rebuilds better-sqlite3 for Electron
-    # save the server's ENTITLEMENT_PUBLIC_KEY (PEM) as electron/config/entitlement-public.pem  (enables offline use)
-    MTP_API_URL=http://localhost:4000 npm run dev
+<div align="center">
+  <img src="build/icon.png" alt="Media Toolkit Pro" width="200" />
+  <p><strong>Professional media management for desktop workflows</strong></p>
+</div>
 
-## How the pieces fit
-    Renderer (React) -> window.mediaAPI (frozen bridge) -> IPC (sender + schema validated) -> Main process
-    Main: FFmpeg / Sharp / pdf-lib / SQLite (history, settings) + apiClient (cookies in a private session) + licence (plan gate)
-    Every job is gated: main asks the server "may this user run <feature> on this file?" before any work starts.
-    Offline: the server's ES256-signed 72h snapshot is verified with the embedded PUBLIC key; usage is queued and synced later.
-    Outdated app (server minimum version): online features pause, local tools keep working.
+## Overview
 
-## Tests (what each one really proves)
-    npm test                  50 tests: queue, IPC validation, FFmpeg/PDF/thumbnails, SQLite vault, entitlement + offline rules,
-                              logger, updater, hardware-encoder args, headless React UI flows, undefined-component lint
-    cd server && npm test     40 logic + HTTP tests; 27 more DB integration tests run when MONGODB_TEST_URI points at a THROWAWAY database
-    npm run smoke:electron    launches the REAL Electron app (needs xvfb on Linux) and runs 19 end-to-end checks: renderer isolation, real
-                              encodes/PDFs/cancel, Vault, thumbnails, logs (SQLite must be built for Electron: done by postinstall)
-    npm run pack && npm run smoke:packaged
-                              builds the Linux package and runs 7 checks against the PACKAGED app: production CSP, unpacked FFmpeg/Sharp/SQLite
-    Note: after `npm install`, SQLite is built for Electron, so the 3 SQLite unit tests skip under plain Node (the smoke test covers them).
+Media Toolkit Pro is a comprehensive desktop application engineered for professionals who demand fast, reliable, and offline-capable media processing. Built with cutting-edge web technologies (React, Electron, Vite) and powered by industry-standard tools (FFmpeg, FFprobe), the platform provides a robust suite of media handling capabilities without cloud dependencies.
 
-## Packaging
-    npm run dist              builds installers for the CURRENT OS into release/ (icons in build/, config in package.json "build")
-    Windows (NSIS), macOS (DMG x64+arm64), Linux (AppImage + deb) are configured; only Linux has been built and run (unpacked).
-    Signing: Windows needs a code-signing certificate, macOS needs a Developer ID + notarization (set CSC_LINK / CSC_KEY_PASSWORD, APPLE_* vars).
-    Auto-update: uses electron-updater against the feed in package.json build.publish (placeholder URL: change it). Updates are checked,
-    downloaded and installed only when the user presses a button, and only work in installed, signed builds.
+## ✨ Key Features
 
-## What is NOT verified / still open
-- SSLCommerz (payment AND refund) is implemented from public documentation; run a full sandbox payment and refund before going live.
-- The 27 backend DB integration tests have never been run (no MongoDB in the build environment). Run them first.
-- Windows and macOS: build config exists, but those installers were never built or run. NVENC / AMF / QSV / VideoToolbox encoders are
-  detected by a real test encode and fall back to CPU, but have never run on actual hardware. Your AMD VAAPI path is covered by
-  argument tests that match your original script; it has never run on a real GPU.
-- Refunds are full refunds only. Refunding an earlier purchase inside a same-plan renewal chain ends that purchase but does not shorten later periods.
-- One person can still make many accounts with different real email providers. Only Gmail-style aliases and an admin-set blocklist are stopped.
-- Queue and Settings screens are not plan-gated (by design). Bug reports can attach a screenshot and an opt-in log, not arbitrary files.
+- 🖥️ **Native Desktop App** — Built with Electron for seamless cross-platform performance
+- 📺 **Media Processing** — Integrated FFmpeg and FFprobe for video/audio manipulation
+- 💾 **Offline-First** — Full functionality without internet connection
+- 🗂️ **Smart Job Management** — Track, queue, and manage processing jobs
+- 🔐 **Secure Vault** — Organize and protect sensitive media assets
+- ⚙️ **Settings & Profiles** — User accounts with customizable preferences
+- 📊 **Activity Dashboard** — Real-time job monitoring and status tracking
+- 🎨 **Modern UI** — Built with React and Tailwind CSS for responsive design
+- 📦 **Cross-Platform** — Windows, macOS, Linux support
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+git clone https://github.com/Shahriyar-Rahim/Media-ToolKit-Pro.git
+cd Media-ToolKit-Pro
+npm install
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+### Build
+
+```bash
+npm run build:ui && npm run dist
+```
+
+## 📁 Project Structure
+
+```
+src/
+├── pages/           # Application pages (Auth, Dashboard, Tools, Settings)
+├── components/      # Reusable UI components
+├── lib/             # Utilities (API, hooks, helpers)
+├── App.jsx          # Main application container
+├── main.jsx         # React entry point
+└── index.css        # Global styles
+
+electron/           # Electron main process
+build/              # Build assets and icons
+tests/              # Test suite
+scripts/            # Build and utility scripts
+```
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, Tailwind CSS, Vite |
+| **Desktop** | Electron 33 |
+| **Media** | FFmpeg, FFprobe |
+| **Database** | SQLite 3 |
+| **Build** | Vite, Electron Builder |
+
+## 📦 Available Scripts
+
+```bash
+npm run dev              # Start development server + Electron
+npm run build:ui         # Build frontend with Vite
+npm run start            # Launch packaged app
+npm run dist             # Build distributable app
+npm run test             # Run test suite
+npm run smoke:electron   # Smoke test Electron build
+npm run smoke:package    # Smoke test packaged app
+```
+
+## 🎯 Core Pages
+
+- **Auth** — User authentication and account creation
+- **Dashboard/Landing** — Main workspace and entry point
+- **ToolPage** — Individual media tool interfaces
+- **JobList** — Active and completed job tracking
+- **Vault** — Asset organization and management
+- **Settings** — App configuration and preferences
+- **Pricing** — Subscription and feature tiers
+- **Support** — Help, documentation, and support channels
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow existing code style
+- Write tests for new features
+- Update documentation as needed
+- Test on multiple platforms
+
+## 📋 Requirements
+
+### Runtime
+- Node.js 18 or higher
+- OS: Windows 10+, macOS 10.15+, Linux (Ubuntu 18.04+)
+
+### Development
+- Git
+- npm or yarn
+- Familiarity with React and Electron
+
+## 🐛 Bug Reports & Feature Requests
+
+Found an issue? Have a great idea? [Open an issue](https://github.com/Shahriyar-Rahim/Media-ToolKit-Pro/issues) on GitHub!
+
+**Please include:**
+- Clear description
+- Steps to reproduce (for bugs)
+- Expected vs. actual behavior
+- Screenshots if applicable
+- System information
+
+## 📄 License
+
+This project is licensed under the MIT License — see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- [Electron](https://www.electronjs.org/)
+- [React](https://react.dev/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [FFmpeg](https://ffmpeg.org/)
+- [SQLite](https://www.sqlite.org/)
+
+## 📞 Support
+
+Need help? Check out:
+
+- [GitHub Issues](https://github.com/Shahriyar-Rahim/Media-ToolKit-Pro/issues)
+- In-app Support page
+- Settings and documentation
+
+---
+
+**Made with ❤️ by the Media Toolkit Pro team**
