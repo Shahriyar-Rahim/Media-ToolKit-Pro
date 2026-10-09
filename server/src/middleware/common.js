@@ -38,13 +38,11 @@ const maintenance = async (req, res, next) => {
   )
     return next();
   if ((await settings.get("app")).maintenanceMode)
-    return res
-      .status(503)
-      .json({
-        error: "Service temporarily unavailable.",
-        code: "MAINTENANCE",
-        offlineToolsAvailable: true,
-      });
+    return res.status(503).json({
+      error: "Service temporarily unavailable.",
+      code: "MAINTENANCE",
+      offlineToolsAvailable: true,
+    });
   next();
 };
 // Only desktop builds that announce a version can be told to update; admin, auth and status endpoints stay reachable.
@@ -61,13 +59,11 @@ const versionGate = async (req, res, next) => {
     return next();
   const min = (await settings.get("app")).minDesktopVersion;
   if (min && cmpVersion(v, min) < 0)
-    return res
-      .status(426)
-      .json({
-        error: `Please update Media Toolkit Pro to version ${min} or newer to use online features. Local tools still work.`,
-        code: "UPGRADE_REQUIRED",
-        minVersion: min,
-      });
+    return res.status(426).json({
+      error: `Please update Media Toolkit Pro to version ${min} or newer to use online features. Local tools still work.`,
+      code: "UPGRADE_REQUIRED",
+      minVersion: min,
+    });
   next();
 };
 const notFound = (_req, res) => res.status(404).json({ error: "Not found" });
@@ -81,11 +77,9 @@ const errorHandler = (err, req, res, _next) => {
   if (err.name === "CastError")
     return res.status(400).json({ error: "Invalid id" });
   console.error("[server error]", req.method, req.path, err); // stack stays in server logs; users get a generic message
-  res
-    .status(500)
-    .json({
-      error: "Something went wrong. Please try again.",
-      code: "INTERNAL",
-    });
+  res.status(500).json({
+    error: "Something went wrong. Please try again.",
+    code: "INTERNAL",
+  });
 };
 module.exports = { validate, maintenance, versionGate, notFound, errorHandler };
