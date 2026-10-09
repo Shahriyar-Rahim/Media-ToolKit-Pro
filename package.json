@@ -10,6 +10,7 @@
     "build:ui": "vite build",
     "start": "electron .",
     "test": "node --test electron/tests/*.test.js tests/*.test.js",
+    "test:all": "node scripts/test-all.js",
     "dist": "vite build && electron-builder --publish never",
     "postinstall": "electron-builder install-app-deps",
     "smoke:electron": "npm run build:ui && node scripts/smoke-electron.js",
@@ -73,11 +74,7 @@
         "network",
         "opengl",
         "wayland",
-        "x11",
-        "shared-memory"
-      ],
-      "slots": [
-        "shared-memory"
+        "x11"
       ]
     },
     "win": {
