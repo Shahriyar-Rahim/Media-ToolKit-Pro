@@ -39,10 +39,24 @@ function createWindow() {
     const ok = isDev ? url.startsWith(DEV_URL) : url.startsWith("file://");
     if (!ok) e.preventDefault();
   });
-  if (isDev) win.loadURL(DEV_URL);
+
+
+  // if (isDev) win.loadURL(DEV_URL);
+
+
+  // if (isDev) {
+  //   win.webContents.openDevTools();
+  // } else win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+
   if (isDev) {
+    win.loadURL(DEV_URL);
     win.webContents.openDevTools();
-  } else win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+  } else {
+    // Dynamically locates dist/index.html inside app.asar across all environments
+    const indexPath = path.join(app.getAppPath(), "dist", "index.html");
+    win.loadFile(indexPath);
+  }
+  
   return win;
 }
 
