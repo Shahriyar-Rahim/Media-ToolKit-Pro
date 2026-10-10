@@ -1,7 +1,7 @@
 {
   "name": "media-toolkit-pro",
   "productName": "Media Toolkit Pro",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Offline media processing desktop app",
   "main": "electron/main.js",
   "type": "commonjs",
@@ -51,7 +51,7 @@
       "**/node_modules/@img/**"
     ],
     "files": [
-      "electron/**",
+      "electron/**/*",
       "dist/**",
       "package.json",
       "!electron/tests/**"

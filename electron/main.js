@@ -1,5 +1,6 @@
 const { app, BrowserWindow, shell, session, Menu } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const { registerIpc } = require("./ipc/register");
 const { openDb } = require("./services/db");
 
@@ -51,8 +52,15 @@ function createWindow() {
     win.loadURL(DEV_URL);
     win.webContents.openDevTools();
   } else {
-    // Dynamically locates dist/index.html inside app.asar across all environments
-    const indexPath = path.join(app.getAppPath(), "dist", "index.html");
+    // Attempt primary resolution via app.getAppPath()
+    let indexPath = path.join(app.getAppPath(), "dist", "index.html");
+
+    // Fallback resolution relative to main.js (__dirname is electron/)
+    if (!fs.existsSync(indexPath)) {
+      indexPath = path.join(__dirname, "..", "dist", "index.html");
+    }
+
+    console.log("[ELECTRON LOAD] Attempting to load UI from:", indexPath);
     win.loadFile(indexPath);
   }
   
