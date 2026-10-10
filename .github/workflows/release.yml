@@ -45,13 +45,13 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           prerelease: ${{ contains(github.ref, '-beta') }}
+          overwrite: true
           files: |
             release/*.deb
             release/*.exe
             release/*.dmg
             release/*.AppImage
             release/*.zip
-            overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -76,47 +76,38 @@ jobs:
           sudo snap install snapcraft --classic
           npm ci
 
-      # - name: Build Snap Package
-      #   id: build_snap
-      #   run: |
-      #     npx electron-builder --linux snap --publish never
-      #     SNAP_FILE=$(ls release/*.snap | head -n 1)
-      #     echo "snap_file=$SNAP_FILE" >> $GITHUB_OUTPUT
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build Snap Package
-      id: build_snap
-      shell: bash
-      run: |
-        set -euo pipefail
+        id: build_snap
+        shell: bash
+        run: |
+          set -euo pipefail
 
-        echo "Building frontend..."
-        npm run build:ui
+          echo "Building frontend..."
+          npm run build:ui
 
-        test -f dist/index.html || {
-          echo "ERROR: dist/index.html was not generated"
-          exit 1
-        }
+          test -f dist/index.html || {
+            echo "ERROR: dist/index.html was not generated"
+            exit 1
+          }
 
-        echo "Building Snap package..."
-        npx electron-builder --linux snap --publish never
+          echo "Building Snap package..."
+          npx electron-builder --linux snap --publish never
 
-        SNAP_FILES=(release/*.snap)
+          SNAP_FILES=(release/*.snap)
 
-        if [ ! -f "${SNAP_FILES[0]:-}" ]; then
-          echo "ERROR: No Snap package was generated"
-          exit 1
-        fi
+          if [ ! -f "${SNAP_FILES[0]:-}" ]; then
+            echo "ERROR: No Snap package was generated"
+            exit 1
+          fi
 
-        SNAP_FILE="${SNAP_FILES[0]}"
+          SNAP_FILE="${SNAP_FILES[0]}"
 
-        echo "Verifying Snap archive..."
-        npx asar list release/linux-unpacked/resources/app.asar \
-          | grep -Fx '/dist/index.html'
+          echo "Verifying Snap archive..."
+          npx asar list release/linux-unpacked/resources/app.asar \
+            | grep -Fx '/dist/index.html'
 
-        echo "Snap package: $SNAP_FILE"
-        echo "snap_file=$SNAP_FILE" >> "$GITHUB_OUTPUT"
+          echo "Snap package: $SNAP_FILE"
+          echo "snap_file=$SNAP_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Upload to Canonical Snap Store
         uses: snapcore/action-publish@v1
